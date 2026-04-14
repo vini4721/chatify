@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import express from "express";
 import jwt from "jsonwebtoken";
+import { sendWelcomeEmail } from '../emails/handlers.js';
 import { protect } from "../middleware/auth.js";
 import User from "../models/User.js";
 
@@ -46,7 +47,7 @@ router.post("/signup", async (req, res) => {
     sendWelcomeEmail({
       email: user.email,
       name: user.name,
-      clientURL: process.env.CLIENT_URL || 'http://localhost:5173',
+      clientURL: process.env.CLIENT_URL || "http://localhost:5173",
     }).catch(() => {
       // keep signup successful even if email provider is unavailable
     });
@@ -61,6 +62,7 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Signup error:', error.message);
     return res.status(500).json({ message: "Failed to sign up" });
   }
 });
@@ -101,35 +103,35 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post('/logout', (_req, res) => {
-  return res.json({ message: 'Logged out successfully' });
+router.post("/logout", (_req, res) => {
+  return res.json({ message: "Logged out successfully" });
 });
 
 router.get("/me", protect, async (req, res) => {
   return res.json({ user: req.user });
 });
 
-router.get('/check', protect, async (req, res) => {
+router.get("/check", protect, async (req, res) => {
   return res.json(req.user);
 });
 
-router.put('/update-profile', protect, async (req, res) => {
+router.put("/update-profile", protect, async (req, res) => {
   try {
     const { profilePic } = req.body;
 
     if (!profilePic) {
-      return res.status(400).json({ message: 'Profile picture is required' });
+      return res.status(400).json({ message: "Profile picture is required" });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       { profilePic },
-      { new: true }
-    ).select('-password');
+      { new: true },
+    ).select("-password");
 
     return res.json(updatedUser);
   } catch {
-    return res.status(500).json({ message: 'Failed to update profile' });
+    return res.status(500).json({ message: "Failed to update profile" });
   }
 });
 
