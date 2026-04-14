@@ -2,9 +2,11 @@ import { useRef } from 'react';
 import { LogOutIcon, Volume2Icon, VolumeXIcon } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
+import useUiClickSound from '../hooks/useUiClickSound';
 
 function ProfileHeader() {
   const fileInputRef = useRef(null);
+  const { playClick } = useUiClickSound();
   const { authUser, logout, updateProfile } = useAuthStore();
   const { isSoundEnabled, toggleSound } = useChatStore();
 
@@ -47,10 +49,24 @@ function ProfileHeader() {
       </div>
 
       <div className="profile-actions">
-        <button type="button" className="icon-btn" onClick={toggleSound}>
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => {
+            playClick();
+            toggleSound();
+          }}
+        >
           {isSoundEnabled ? <Volume2Icon size={18} /> : <VolumeXIcon size={18} />}
         </button>
-        <button type="button" className="icon-btn" onClick={logout}>
+        <button
+          type="button"
+          className="icon-btn"
+          onClick={() => {
+            playClick();
+            logout();
+          }}
+        >
           <LogOutIcon size={18} />
         </button>
       </div>

@@ -5,12 +5,13 @@ import ChatsList from '../components/ChatsList';
 import ContactList from '../components/ContactList';
 import NoConversationPlaceholder from '../components/NoConversationPlaceholder';
 import ProfileHeader from '../components/ProfileHeader';
+import BorderAnimatedContainer from '../components/BorderAnimatedContainer';
 
 function ChatPage() {
   const { activeTab, selectedUser } = useChatStore();
 
   return (
-    <div className="chat-shell-v2">
+    <BorderAnimatedContainer className="chat-shell-v2">
       <aside className="chat-left">
         <ProfileHeader />
         <ActiveTabSwitch />
@@ -22,7 +23,7 @@ function ChatPage() {
       <section className="chat-right">
         {selectedUser ? <ChatContainer /> : <NoConversationPlaceholder />}
       </section>
-    </div>
+    </BorderAnimatedContainer>
   );
 }
 

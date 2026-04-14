@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { ImageIcon, SendIcon, XIcon } from 'lucide-react';
 import { useChatStore } from '../store/useChatStore';
+import useKeyboardSound from '../hooks/useKeyboardSound';
 
 function MessageInput() {
   const [text, setText] = useState('');
@@ -8,6 +9,7 @@ function MessageInput() {
   const fileInputRef = useRef(null);
 
   const typingTimeout = useRef(null);
+  const { playKeySound } = useKeyboardSound();
   const { sendMessage, emitTypingStart, emitTypingStop } = useChatStore();
 
   const handleImage = (event) => {
@@ -34,6 +36,7 @@ function MessageInput() {
 
   const handleTextChange = (event) => {
     setText(event.target.value);
+    playKeySound();
     emitTypingStart();
 
     if (typingTimeout.current) {
