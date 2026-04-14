@@ -7,6 +7,7 @@ import path from 'path';
 import { Server } from "socket.io";
 
 import { connectDB } from "./config/db.js";
+import { apiRateLimit, authRateLimit } from './middleware/rateLimit.js';
 import Message from "./models/Message.js";
 import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
@@ -26,13 +27,14 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: '6mb' }));
+app.use('/api', apiRateLimit);
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.use("/api/auth", authRoutes);
+app.use('/api/auth', authRateLimit, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 

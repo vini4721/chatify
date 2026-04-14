@@ -1,4 +1,5 @@
 import express from "express";
+import { uploadImage } from '../lib/cloudinary.js';
 import { protect } from "../middleware/auth.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
@@ -80,11 +81,13 @@ async function sendMessageHandler(req, res) {
       return res.status(404).json({ message: 'Receiver not found' });
     }
 
+    const imageUrl = image ? await uploadImage(image) : '';
+
     const message = await Message.create({
       senderId: req.user._id,
       receiverId: userId,
       text: text.trim(),
-      image,
+      image: imageUrl,
     });
 
     return res.status(201).json({ message });

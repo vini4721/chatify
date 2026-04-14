@@ -43,6 +43,14 @@ router.post("/signup", async (req, res) => {
 
     const token = createToken(user._id.toString());
 
+    sendWelcomeEmail({
+      email: user.email,
+      name: user.name,
+      clientURL: process.env.CLIENT_URL || 'http://localhost:5173',
+    }).catch(() => {
+      // keep signup successful even if email provider is unavailable
+    });
+
     return res.status(201).json({
       token,
       user: {
