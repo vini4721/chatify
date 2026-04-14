@@ -313,6 +313,21 @@ input {
   gap: 0.6rem;
 }
 
+.list-item .unread-pill {
+  margin-left: auto;
+  background: #2ec7ff;
+  color: #05243b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .list-meta p {
   font-weight: 600;
 }
@@ -324,6 +339,11 @@ input {
 
 .offline {
   color: #98aec1;
+  font-size: 0.8rem;
+}
+
+.typing {
+  color: #8bd5ff;
   font-size: 0.8rem;
 }
 

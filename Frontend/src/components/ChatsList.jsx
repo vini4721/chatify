@@ -5,7 +5,7 @@ import UsersLoadingSkeleton from './UsersLoadingSkeleton';
 import NoChatsFound from './NoChatsFound';
 
 function ChatsList() {
-  const { chats, getMyChatPartners, setSelectedUser, isUsersLoading } = useChatStore();
+  const { chats, getMyChatPartners, setSelectedUser, isUsersLoading, unreadCounts } = useChatStore();
   const { onlineUsers } = useAuthStore();
 
   useEffect(() => {
@@ -37,6 +37,7 @@ function ChatsList() {
               {onlineUsers.includes(user._id) ? 'Online' : 'Offline'}
             </span>
           </div>
+          {!!unreadCounts[user._id] && <span className="unread-pill">{unreadCounts[user._id]}</span>}
         </button>
       ))}
     </>

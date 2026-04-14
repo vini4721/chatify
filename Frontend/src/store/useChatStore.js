@@ -12,10 +12,20 @@ export const useChatStore = create((set, get) => ({
   isUsersLoading: false,
   isMessagesLoading: false,
   isSoundEnabled: JSON.parse(localStorage.getItem('is_sound_enabled') || 'false'),
+  unreadCounts: {},
+  typingUsers: {},
   messageListener: null,
+  typingStartListener: null,
+  typingStopListener: null,
 
   setActiveTab: (activeTab) => set({ activeTab }),
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (selectedUser) => {
+    const nextUnread = { ...get().unreadCounts };
+    if (selectedUser?._id) {
+      delete nextUnread[selectedUser._id];
+    }
+    set({ selectedUser, unreadCounts: nextUnread });
+  },
 
   toggleSound: () => {
     const next = !get().isSoundEnabled;
@@ -121,9 +131,22 @@ export const useChatStore = create((set, get) => ({
     const listener = (newMessage) => {
       const isFromSelectedUser = newMessage.senderId === selectedUser._id;
       const isMyEcho = newMessage.senderId === authUser._id;
-      if (!isFromSelectedUser && !isMyEcho) return;
+      const isFromOtherUser = newMessage.senderId !== authUser._id;
 
-      set({ messages: [...get().messages, newMessage] });
+      if (isFromSelectedUser || isMyEcho) {
+        set({ messages: [...get().messages, newMessage] });
+      } else if (isFromOtherUser) {
+        const userId = newMessage.senderId;
+        const currentUnread = get().unreadCounts[userId] || 0;
+        set({
+          unreadCounts: {
+            ...get().unreadCounts,
+            [userId]: currentUnread + 1,
+          },
+        });
+      }
+
+      get().getMyChatPartners();
 
       if (isSoundEnabled && isFromSelectedUser) {
         const notification = new Audio(
@@ -133,18 +156,65 @@ export const useChatStore = create((set, get) => ({
       }
     };
 
+    const typingStart = ({ from }) => {
+      if (!from) return;
+      set({ typingUsers: { ...get().typingUsers, [from]: true } });
+    };
+
+    const typingStop = ({ from }) => {
+      if (!from) return;
+      const nextTyping = { ...get().typingUsers };
+      delete nextTyping[from];
+      set({ typingUsers: nextTyping });
+    };
+
     socket.on('new-message', listener);
-    set({ messageListener: listener });
+    socket.on('typing-start', typingStart);
+    socket.on('typing-stop', typingStop);
+
+    set({
+      messageListener: listener,
+      typingStartListener: typingStart,
+      typingStopListener: typingStop,
+    });
   },
 
   unsubscribeFromMessages: () => {
     const { socket } = useAuthStore.getState();
-    const { messageListener } = get();
+    const { messageListener, typingStartListener, typingStopListener } = get();
 
     if (socket && messageListener) {
       socket.off('new-message', messageListener);
     }
 
-    set({ messageListener: null });
+    if (socket && typingStartListener) {
+      socket.off('typing-start', typingStartListener);
+    }
+
+    if (socket && typingStopListener) {
+      socket.off('typing-stop', typingStopListener);
+    }
+
+    set({
+      messageListener: null,
+      typingStartListener: null,
+      typingStopListener: null,
+    });
+  },
+
+  emitTypingStart: () => {
+    const { socket } = useAuthStore.getState();
+    const { selectedUser } = get();
+    if (socket?.connected && selectedUser?._id) {
+      socket.emit('typing-start', { to: selectedUser._id });
+    }
+  },
+
+  emitTypingStop: () => {
+    const { socket } = useAuthStore.getState();
+    const { selectedUser } = get();
+    if (socket?.connected && selectedUser?._id) {
+      socket.emit('typing-stop', { to: selectedUser._id });
+    }
   },
 }));

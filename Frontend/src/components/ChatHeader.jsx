@@ -3,9 +3,10 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
 
 function ChatHeader() {
-  const { selectedUser, setSelectedUser } = useChatStore();
+  const { selectedUser, setSelectedUser, typingUsers } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const isOnline = selectedUser && onlineUsers.includes(selectedUser._id);
+  const isTyping = selectedUser && typingUsers[selectedUser._id];
 
   if (!selectedUser) return null;
 
@@ -21,7 +22,9 @@ function ChatHeader() {
         </div>
         <div>
           <h4>{selectedUser.name}</h4>
-          <p className={isOnline ? 'online' : 'offline'}>{isOnline ? 'Online' : 'Offline'}</p>
+          <p className={isTyping ? 'typing' : isOnline ? 'online' : 'offline'}>
+            {isTyping ? 'Typing...' : isOnline ? 'Online' : 'Offline'}
+          </p>
         </div>
       </div>
       <button type="button" className="icon-btn" onClick={() => setSelectedUser(null)}>

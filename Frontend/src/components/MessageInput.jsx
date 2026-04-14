@@ -7,7 +7,8 @@ function MessageInput() {
   const [imagePreview, setImagePreview] = useState('');
   const fileInputRef = useRef(null);
 
-  const { sendMessage } = useChatStore();
+  const typingTimeout = useRef(null);
+  const { sendMessage, emitTypingStart, emitTypingStop } = useChatStore();
 
   const handleImage = (event) => {
     const file = event.target.files?.[0];
@@ -25,9 +26,23 @@ function MessageInput() {
 
   const submit = async (event) => {
     event.preventDefault();
+    emitTypingStop();
     await sendMessage({ text, image: imagePreview });
     setText('');
     removeImage();
+  };
+
+  const handleTextChange = (event) => {
+    setText(event.target.value);
+    emitTypingStart();
+
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+
+    typingTimeout.current = setTimeout(() => {
+      emitTypingStop();
+    }, 700);
   };
 
   return (
@@ -45,7 +60,7 @@ function MessageInput() {
         <input
           type="text"
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={handleTextChange}
           placeholder="Type your message..."
         />
 

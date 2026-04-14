@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import http from "http";
 import jwt from "jsonwebtoken";
+import path from 'path';
 import { Server } from "socket.io";
 
 import { connectDB } from "./config/db.js";
@@ -14,6 +15,7 @@ import { onlineUsers } from "./socketState.js";
 
 const app = express();
 const server = http.createServer(app);
+const __dirname = path.resolve();
 
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
@@ -33,6 +35,13 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../Frontend/dist')));
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(__dirname, '../Frontend/dist/index.html'));
+  });
+}
 
 const io = new Server(server, {
   cors: {
@@ -62,6 +71,22 @@ function broadcastOnlineUsers() {
 io.on("connection", (socket) => {
   onlineUsers.set(socket.userId, socket.id);
   broadcastOnlineUsers();
+
+  socket.on('typing-start', ({ to }) => {
+    if (!to) return;
+    const recipientSocketId = onlineUsers.get(to);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('typing-start', { from: socket.userId });
+    }
+  });
+
+  socket.on('typing-stop', ({ to }) => {
+    if (!to) return;
+    const recipientSocketId = onlineUsers.get(to);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('typing-stop', { from: socket.userId });
+    }
+  });
 
   socket.on(
     "private-message",
