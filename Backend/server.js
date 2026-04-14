@@ -63,9 +63,9 @@ io.on('connection', (socket) => {
     onlineUsers.set(socket.userId, socket.id);
     broadcastOnlineUsers();
 
-    socket.on('private-message', async ({ to, text }, callback) => {
+    socket.on('private-message', async ({ to, text = '', image = '' }, callback) => {
         try {
-            if (!to || !text || !text.trim()) {
+            if (!to || (!text.trim() && !image)) {
                 callback?.({ error: 'Invalid message payload' });
                 return;
             }
@@ -74,6 +74,7 @@ io.on('connection', (socket) => {
                 senderId: socket.userId,
                 receiverId: to,
                 text: text.trim(),
+                image,
             });
 
             const recipientSocketId = onlineUsers.get(to);

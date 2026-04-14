@@ -22,18 +22,34 @@ function App() {
   })
 
   const [users, setUsers] = useState([])
+  const [chats, setChats] = useState([])
+  const [activeTab, setActiveTab] = useState('chats')
   const [selectedUserId, setSelectedUserId] = useState('')
   const [messages, setMessages] = useState([])
   const [messageInput, setMessageInput] = useState('')
+  const [imagePreview, setImagePreview] = useState('')
   const [onlineUsers, setOnlineUsers] = useState([])
+  const [isUsersLoading, setIsUsersLoading] = useState(false)
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false)
+  const [isSoundEnabled, setIsSoundEnabled] = useState(
+    JSON.parse(localStorage.getItem('is_sound_enabled') || 'false')
+  )
 
   const socketRef = useRef(null)
   const listEndRef = useRef(null)
+  const fileInputRef = useRef(null)
+  const selectedUserIdRef = useRef('')
 
   const selectedUser = useMemo(
     () => users.find((user) => user._id === selectedUserId) || null,
     [users, selectedUserId],
   )
+
+  const activeList = activeTab === 'chats' ? chats : users
+
+  useEffect(() => {
+    selectedUserIdRef.current = selectedUserId
+  }, [selectedUserId])
 
   useEffect(() => {
     if (token && !currentUser) {
@@ -52,21 +68,36 @@ function App() {
   useEffect(() => {
     if (!token || !currentUser) return
 
-    fetch(`${API_BASE}/api/users`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setUsers(data.users || [])
-        if (!selectedUserId && data.users?.length) {
-          setSelectedUserId(data.users[0]._id)
+    setIsUsersLoading(true)
+
+    Promise.all([
+      fetch(`${API_BASE}/api/messages/contacts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => res.json()),
+      fetch(`${API_BASE}/api/messages/chats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((res) => res.json()),
+    ])
+      .then(([contactsData, chatsData]) => {
+        setUsers(contactsData.users || [])
+        setChats(chatsData.users || [])
+
+        const fallback = (chatsData.users || [])[0]?._id || (contactsData.users || [])[0]?._id
+        if (!selectedUserId && fallback) {
+          setSelectedUserId(fallback)
         }
       })
-      .catch(() => setUsers([]))
+      .catch(() => {
+        setUsers([])
+        setChats([])
+      })
+      .finally(() => setIsUsersLoading(false))
   }, [token, currentUser, selectedUserId])
 
   useEffect(() => {
     if (!token || !selectedUserId) return
+
+    setIsMessagesLoading(true)
 
     fetch(`${API_BASE}/api/messages/${selectedUserId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -74,6 +105,7 @@ function App() {
       .then((res) => res.json())
       .then((data) => setMessages(data.messages || []))
       .catch(() => setMessages([]))
+      .finally(() => setIsMessagesLoading(false))
   }, [token, selectedUserId])
 
   useEffect(() => {
@@ -90,11 +122,27 @@ function App() {
     })
 
     socket.on('new-message', (incoming) => {
-      if (
-        incoming.senderId === selectedUserId ||
-        incoming.receiverId === selectedUserId
-      ) {
+      const selected = selectedUserIdRef.current
+      if (incoming.senderId === selected || incoming.receiverId === selected) {
         setMessages((prev) => [...prev, incoming])
+      }
+
+      const partnerId =
+        incoming.senderId === currentUser._id ? incoming.receiverId : incoming.senderId
+      if (partnerId !== currentUser._id) {
+        setChats((prev) => {
+          const exists = prev.some((user) => user._id === partnerId)
+          if (exists) return prev
+          const fromContacts = users.find((user) => user._id === partnerId)
+          return fromContacts ? [fromContacts, ...prev] : prev
+        })
+      }
+
+      if (isSoundEnabled && incoming.senderId !== currentUser._id) {
+        const notification = new Audio(
+          'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
+        )
+        notification.play().catch(() => {})
       }
     })
 
@@ -102,7 +150,7 @@ function App() {
       socket.disconnect()
       socketRef.current = null
     }
-  }, [token, currentUser, selectedUserId])
+  }, [token, currentUser, users, isSoundEnabled])
 
   useEffect(() => {
     listEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -151,21 +199,53 @@ function App() {
     setToken('')
     setCurrentUser(null)
     setUsers([])
+    setChats([])
     setMessages([])
     setSelectedUserId('')
     setOnlineUsers([])
     socketRef.current?.disconnect()
   }
 
+  function toggleSound() {
+    const next = !isSoundEnabled
+    setIsSoundEnabled(next)
+    localStorage.setItem('is_sound_enabled', JSON.stringify(next))
+  }
+
+  function handleImageChange(event) {
+    const file = event.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(typeof reader.result === 'string' ? reader.result : '')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function clearImagePreview() {
+    setImagePreview('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   function handleSendMessage(event) {
     event.preventDefault()
     const text = messageInput.trim()
-    if (!text || !selectedUserId || !socketRef.current) return
+    if ((!text && !imagePreview) || !selectedUserId || !socketRef.current) return
 
-    socketRef.current.emit('private-message', { to: selectedUserId, text }, (result) => {
+    socketRef.current.emit('private-message', { to: selectedUserId, text, image: imagePreview }, (result) => {
       if (result?.error) return
       setMessages((prev) => [...prev, result.message])
       setMessageInput('')
+      clearImagePreview()
+
+      setChats((prev) => {
+        const exists = prev.some((user) => user._id === selectedUserId)
+        if (exists) return prev
+        return selectedUser ? [selectedUser, ...prev] : prev
+      })
     })
   }
 
@@ -235,13 +315,51 @@ function App() {
             <p className="tag">Signed in as</p>
             <h2>{currentUser.name}</h2>
           </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
+          <div className="header-actions">
+            <button onClick={toggleSound} className="logout-btn" type="button">
+              {isSoundEnabled ? 'Sound On' : 'Sound Off'}
+            </button>
+            <button onClick={handleLogout} className="logout-btn" type="button">
+              Logout
+            </button>
+          </div>
         </header>
 
+        <div className="tabs">
+          <button
+            className={`tab-btn ${activeTab === 'chats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chats')}
+            type="button"
+          >
+            Chats
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'contacts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('contacts')}
+            type="button"
+          >
+            Contacts
+          </button>
+        </div>
+
         <div className="user-list">
-          {users.map((user) => {
+          {isUsersLoading && (
+            <>
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="user-card skeleton" />
+              ))}
+            </>
+          )}
+
+          {!isUsersLoading && activeList.length === 0 && (
+            <div className="empty-chat small">
+              {activeTab === 'chats'
+                ? 'No conversations yet. Start a chat from Contacts.'
+                : 'No contacts available yet.'}
+            </div>
+          )}
+
+          {!isUsersLoading && activeList.map((user) => {
             const isActive = selectedUserId === user._id
             const isOnline = onlineUsers.includes(user._id)
 
@@ -273,12 +391,29 @@ function App() {
             </header>
 
             <div className="messages">
-              {messages.map((message) => {
+              {isMessagesLoading && (
+                <>
+                  {[1, 2, 3, 4].map((item) => (
+                    <article key={item} className={`bubble-wrap ${item % 2 ? 'mine' : 'theirs'}`}>
+                      <div className="bubble skeleton-line" />
+                    </article>
+                  ))}
+                </>
+              )}
+
+              {!isMessagesLoading && messages.length === 0 && (
+                <div className="empty-chat">Start your conversation with {selectedUser.name}.</div>
+              )}
+
+              {!isMessagesLoading && messages.map((message) => {
                 const ownMessage = message.senderId === currentUser._id
 
                 return (
                   <article key={message._id} className={`bubble-wrap ${ownMessage ? 'mine' : 'theirs'}`}>
-                    <div className="bubble">{message.text}</div>
+                    <div className="bubble">
+                      {message.image && <img src={message.image} alt="Shared" className="message-image" />}
+                      {message.text && <p className="message-text">{message.text}</p>}
+                    </div>
                     <span className="timestamp">{formatTime(message.createdAt)}</span>
                   </article>
                 )
@@ -288,10 +423,32 @@ function App() {
 
             <form className="composer" onSubmit={handleSendMessage}>
               <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden-input"
+              />
+
+              {imagePreview && (
+                <div className="image-preview">
+                  <img src={imagePreview} alt="Preview" />
+                  <button type="button" onClick={clearImagePreview}>x</button>
+                </div>
+              )}
+
+              <input
                 value={messageInput}
                 onChange={(event) => setMessageInput(event.target.value)}
                 placeholder="Write a message..."
               />
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Image
+              </button>
               <button type="submit" className="primary-btn">
                 Send
               </button>
