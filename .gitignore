@@ -1,0 +1,10 @@
+.DS_Store
+**/.DS_Store
+
+Backend/.env
+Frontend/.env
+
+Frontend/dist/
+
+# Keep package-lock.json tracked; ignore installed dependencies only for new files.
+**/node_modules/
