@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 export async function connectDB(mongoUri) {
   if (!mongoUri) {
-    throw new Error('MONGO_URI is not configured.');
+    throw new Error("MONGO_URI is not configured.");
   }
 
   await mongoose.connect(mongoUri);
-  console.log('MongoDB connected');
+  console.log("MongoDB connected");
 }

@@ -1,45 +1,49 @@
-import express from 'express';
-import Message from '../models/Message.js';
-import User from '../models/User.js';
-import { protect } from '../middleware/auth.js';
+import express from "express";
+import { protect } from "../middleware/auth.js";
+import Message from "../models/Message.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
 router.use(protect);
 
-router.get('/contacts', async (req, res) => {
+router.get("/contacts", async (req, res) => {
   try {
-    const contacts = await User.find({ _id: { $ne: req.user._id } }).select('-password');
+    const contacts = await User.find({ _id: { $ne: req.user._id } }).select(
+      "-password",
+    );
     return res.json({ users: contacts });
   } catch {
-    return res.status(500).json({ message: 'Failed to fetch contacts' });
+    return res.status(500).json({ message: "Failed to fetch contacts" });
   }
 });
 
-router.get('/chats', async (req, res) => {
+router.get("/chats", async (req, res) => {
   try {
     const messages = await Message.find({
       $or: [{ senderId: req.user._id }, { receiverId: req.user._id }],
-    }).select('senderId receiverId');
+    }).select("senderId receiverId");
 
     const partnerIds = [
       ...new Set(
         messages.map((msg) =>
           msg.senderId.toString() === req.user._id.toString()
             ? msg.receiverId.toString()
-            : msg.senderId.toString()
-        )
+            : msg.senderId.toString(),
+        ),
       ),
     ];
 
-    const chats = await User.find({ _id: { $in: partnerIds } }).select('-password');
+    const chats = await User.find({ _id: { $in: partnerIds } }).select(
+      "-password",
+    );
     return res.json({ users: chats });
   } catch {
-    return res.status(500).json({ message: 'Failed to fetch chats' });
+    return res.status(500).json({ message: "Failed to fetch chats" });
   }
 });
 
-router.get('/:userId', async (req, res) => {
+router.get("/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -52,21 +56,28 @@ router.get('/:userId', async (req, res) => {
 
     return res.json({ messages });
   } catch {
-    return res.status(500).json({ message: 'Failed to fetch messages' });
+    return res.status(500).json({ message: "Failed to fetch messages" });
   }
 });
 
 async function sendMessageHandler(req, res) {
   try {
     const { userId } = req.params;
-    const { text = '', image = '' } = req.body;
+    const { text = "", image = "" } = req.body;
 
     if (!text.trim() && !image) {
-      return res.status(400).json({ message: 'Text or image is required' });
+      return res.status(400).json({ message: "Text or image is required" });
     }
 
     if (userId === req.user._id.toString()) {
-      return res.status(400).json({ message: 'Cannot send message to yourself' });
+      return res
+        .status(400)
+        .json({ message: "Cannot send message to yourself" });
+    }
+
+    const receiverExists = await User.exists({ _id: userId });
+    if (!receiverExists) {
+      return res.status(404).json({ message: 'Receiver not found' });
     }
 
     const message = await Message.create({
@@ -78,11 +89,11 @@ async function sendMessageHandler(req, res) {
 
     return res.status(201).json({ message });
   } catch {
-    return res.status(500).json({ message: 'Failed to send message' });
+    return res.status(500).json({ message: "Failed to send message" });
   }
 }
 
-router.post('/:userId', sendMessageHandler);
-router.post('/send/:userId', sendMessageHandler);
+router.post("/:userId", sendMessageHandler);
+router.post("/send/:userId", sendMessageHandler);
 
 export default router;
