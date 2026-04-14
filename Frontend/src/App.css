@@ -1,0 +1,264 @@
+.auth-shell,
+.chat-shell {
+  width: min(1120px, 100% - 2rem);
+  margin: 2.5rem auto;
+}
+
+.auth-panel {
+  background: linear-gradient(155deg, #131b23 0%, #1f2a35 60%, #293747 100%);
+  color: #f4fbff;
+  border-radius: 28px;
+  padding: 2.2rem;
+  border: 1px solid #3a4b5e;
+  box-shadow: 0 30px 70px rgba(2, 8, 15, 0.35);
+}
+
+.tag {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: #9ed7ff;
+  margin: 0;
+}
+
+.subtext {
+  margin-top: 0.5rem;
+  color: #c6d4df;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.8rem;
+}
+
+input {
+  border: 1px solid #5a6e83;
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
+  background: rgba(8, 19, 30, 0.55);
+  color: #f5fbff;
+  font-size: 0.97rem;
+}
+
+input::placeholder {
+  color: #9db3c4;
+}
+
+input:focus-visible {
+  outline: 2px solid #7ed8ff;
+  outline-offset: 2px;
+}
+
+.primary-btn,
+.switch-btn,
+.logout-btn {
+  border: 0;
+  cursor: pointer;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.primary-btn {
+  padding: 0.85rem 1.2rem;
+  background: linear-gradient(120deg, #2bd2ff, #3ba4ff);
+  color: #05233a;
+}
+
+.switch-btn {
+  margin-top: 0.8rem;
+  background: transparent;
+  color: #b8d7eb;
+  padding: 0.4rem 0;
+}
+
+.error-text {
+  margin: 0;
+  color: #ffb9c2;
+  font-size: 0.9rem;
+}
+
+.chat-shell {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  min-height: calc(100vh - 5rem);
+}
+
+.sidebar,
+.chat-panel {
+  border-radius: 24px;
+  border: 1px solid #3d5066;
+  background: rgba(15, 27, 40, 0.86);
+  backdrop-filter: blur(4px);
+}
+
+.sidebar {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #324456;
+}
+
+.sidebar-header h2 {
+  margin: 0.1rem 0 0;
+  color: #ecf7ff;
+  font-size: 1.2rem;
+}
+
+.logout-btn {
+  background: #2a3b4d;
+  color: #b8d5ea;
+  padding: 0.6rem 0.8rem;
+}
+
+.user-list {
+  margin-top: 0.9rem;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.user-card {
+  width: 100%;
+  border: 1px solid #344a60;
+  border-radius: 16px;
+  background: rgba(27, 40, 54, 0.8);
+  color: #deeffb;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-card.active {
+  border-color: #65c6ff;
+  background: rgba(25, 70, 96, 0.85);
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #94e3ff, #53b5ec);
+  color: #093451;
+  font-weight: 700;
+}
+
+.user-name,
+.status {
+  margin: 0;
+}
+
+.status {
+  font-size: 0.82rem;
+}
+
+.online {
+  color: #86f9bb;
+}
+
+.offline {
+  color: #92a6b7;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.chat-header h3 {
+  margin: 0;
+  color: #e9f7ff;
+}
+
+.chat-header p {
+  margin: 0.2rem 0 0;
+  color: #9db5c8;
+}
+
+.messages {
+  margin-top: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.65rem;
+  padding-right: 0.35rem;
+}
+
+.bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+}
+
+.bubble-wrap.mine {
+  justify-self: end;
+  align-items: flex-end;
+}
+
+.bubble-wrap.theirs {
+  justify-self: start;
+}
+
+.bubble {
+  padding: 0.72rem 0.85rem;
+  border-radius: 14px;
+  line-height: 1.4;
+}
+
+.mine .bubble {
+  background: linear-gradient(145deg, #2ec6ff, #2f8eff);
+  color: #07253b;
+}
+
+.theirs .bubble {
+  background: #2a3d51;
+  color: #e3eff8;
+}
+
+.timestamp {
+  margin-top: 0.2rem;
+  color: #8aa2b5;
+  font-size: 0.76rem;
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.empty-chat {
+  margin: auto;
+  color: #bdd0de;
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .chat-shell {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .sidebar {
+    max-height: 300px;
+  }
+
+  .bubble-wrap {
+    max-width: 88%;
+  }
+}
