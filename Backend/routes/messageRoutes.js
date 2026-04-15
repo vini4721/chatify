@@ -139,7 +139,10 @@ router.delete("/bulk", async (req, res) => {
 
     await Message.deleteMany({ _id: { $in: deletableIds } });
 
-    return res.json({ deletedIds: deletableIds, deletedCount: deletableIds.length });
+    return res.json({
+      deletedIds: deletableIds,
+      deletedCount: deletableIds.length,
+    });
   } catch {
     return res.status(500).json({ message: "Failed to delete messages" });
   }
