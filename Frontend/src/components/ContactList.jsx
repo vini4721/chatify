@@ -1,5 +1,5 @@
 import { SearchIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import UsersLoadingSkeleton from "./UsersLoadingSkeleton";
@@ -7,10 +7,7 @@ import UsersLoadingSkeleton from "./UsersLoadingSkeleton";
 function ContactList() {
   const [searchInput, setSearchInput] = useState("");
   const {
-    allContacts,
-    getAllContacts,
     setSelectedUser,
-    isUsersLoading,
     searchUsers,
     clearUserSearchResults,
     userSearchResults,
@@ -18,14 +15,10 @@ function ContactList() {
   } = useChatStore();
   const { onlineUsers } = useAuthStore();
 
-  useEffect(() => {
-    getAllContacts();
-  }, [getAllContacts]);
-
   const isSearchingMode = searchInput.trim().length > 0;
   const visibleUsers = useMemo(
-    () => (isSearchingMode ? userSearchResults : allContacts),
-    [allContacts, isSearchingMode, userSearchResults],
+    () => (isSearchingMode ? userSearchResults : []),
+    [isSearchingMode, userSearchResults],
   );
 
   const submitSearch = async (event) => {
@@ -37,8 +30,6 @@ function ContactList() {
     setSearchInput("");
     clearUserSearchResults();
   };
-
-  if (isUsersLoading) return <UsersLoadingSkeleton />;
 
   return (
     <div className="contacts-panel">
@@ -68,6 +59,12 @@ function ContactList() {
 
       <div className="contact-list-items">
         {isSearchingMode && isSearchingUser && <UsersLoadingSkeleton />}
+
+        {!isSearchingMode && (
+          <div className="placeholder compact">
+            <p>Search by User ID, username, or name to start a chat.</p>
+          </div>
+        )}
 
         {!isSearchingUser && isSearchingMode && !visibleUsers.length && (
           <div className="placeholder compact">
