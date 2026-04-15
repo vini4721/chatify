@@ -7,6 +7,13 @@ import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
 import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return String(value._id);
+  return String(value);
+}
+
 function ChatContainer() {
   const { authUser } = useAuthStore();
   const {
@@ -90,8 +97,9 @@ function ChatContainer() {
             </div>
 
             {messages.map((msg) => {
-              const own = msg.senderId === authUser._id;
-              const isSelected = selectedMessageIds.includes(msg._id);
+              const msgId = normalizeId(msg._id);
+              const own = normalizeId(msg.senderId) === normalizeId(authUser?._id);
+              const isSelected = selectedMessageIds.includes(msgId);
               return (
                 <article
                   key={msg._id}
@@ -101,7 +109,7 @@ function ChatContainer() {
                     <button
                       type="button"
                       className={`message-select-btn ${isSelected ? "active" : ""}`}
-                      onClick={() => toggleMessageSelection(msg._id)}
+                      onClick={() => toggleMessageSelection(msgId)}
                     >
                       {isSelected ? "Selected" : "Select"}
                     </button>

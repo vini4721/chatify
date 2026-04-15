@@ -3,6 +3,13 @@ import { create } from "zustand";
 import { apiFetch } from "../lib/api";
 import { useAuthStore } from "./useAuthStore";
 
+function normalizeId(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return String(value._id);
+  return String(value);
+}
+
 export const useChatStore = create((set, get) => ({
   allContacts: [],
   chats: [],
@@ -64,12 +71,17 @@ export const useChatStore = create((set, get) => ({
     set({ isSelectingMessages: false, selectedMessageIds: [] }),
 
   toggleMessageSelection: (messageId) => {
+    const normalizedMessageId = normalizeId(messageId);
+    if (!normalizedMessageId) return;
+
     const selected = get().selectedMessageIds;
-    if (selected.includes(messageId)) {
-      set({ selectedMessageIds: selected.filter((id) => id !== messageId) });
+    if (selected.includes(normalizedMessageId)) {
+      set({
+        selectedMessageIds: selected.filter((id) => id !== normalizedMessageId),
+      });
       return;
     }
-    set({ selectedMessageIds: [...selected, messageId] });
+    set({ selectedMessageIds: [...selected, normalizedMessageId] });
   },
 
   clearUserSearchResults: () => set({ userSearchResults: [] }),
@@ -153,20 +165,22 @@ export const useChatStore = create((set, get) => ({
         body: JSON.stringify({ messageIds: selectedMessageIds }),
       });
 
-      const deletedIds = data.deletedIds || [];
+      const deletedIds = (data.deletedIds || []).map(normalizeId);
       const deletedSet = new Set(deletedIds);
 
       set({
-        messages: messages.filter((msg) => !deletedSet.has(msg._id)),
+        messages: messages.filter((msg) => !deletedSet.has(normalizeId(msg._id))),
         selectedMessageIds: [],
         isSelectingMessages: false,
         replyToMessage:
-          replyToMessage && deletedSet.has(replyToMessage._id)
+          replyToMessage && deletedSet.has(normalizeId(replyToMessage._id))
             ? null
             : replyToMessage,
       });
 
-      toast.success(`${data.deletedCount || deletedIds.length} message(s) deleted`);
+      toast.success(
+        `${data.deletedCount || deletedIds.length} message(s) deleted`,
+      );
     } catch (error) {
       toast.error(error.message);
     }
@@ -250,14 +264,18 @@ export const useChatStore = create((set, get) => ({
     if (!socket || !selectedUser) return;
 
     const listener = (newMessage) => {
-      const isFromSelectedUser = newMessage.senderId === selectedUser._id;
-      const isMyEcho = newMessage.senderId === authUser._id;
-      const isFromOtherUser = newMessage.senderId !== authUser._id;
+      const senderId = normalizeId(newMessage.senderId);
+      const selectedUserId = normalizeId(selectedUser._id);
+      const authUserId = normalizeId(authUser._id);
+
+      const isFromSelectedUser = senderId === selectedUserId;
+      const isMyEcho = senderId === authUserId;
+      const isFromOtherUser = senderId !== authUserId;
 
       if (isFromSelectedUser || isMyEcho) {
         set({ messages: [...get().messages, newMessage] });
       } else if (isFromOtherUser) {
-        const userId = newMessage.senderId;
+        const userId = senderId;
         const currentUnread = get().unreadCounts[userId] || 0;
         set({
           unreadCounts: {
