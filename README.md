@@ -1,4 +1,4 @@
-# Chatify Clone
+# Chatify
 
 A full-stack real-time chat app inspired by Chatify. This repo contains a Node.js/Express backend with Socket.IO and a React/Vite frontend.
 
