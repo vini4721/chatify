@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef } from "react";
 
 function useUiClickSound() {
   const ctxRef = useRef(null);
@@ -16,7 +16,7 @@ function useUiClickSound() {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'triangle';
+      osc.type = "triangle";
       osc.frequency.value = 520;
       gain.gain.value = 0.02;
 

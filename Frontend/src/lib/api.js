@@ -1,7 +1,22 @@
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+function resolveApiBase() {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
 
-export const TOKEN_KEY = 'chat_token';
-export const USER_KEY = 'chat_user';
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `${window.location.protocol}//${hostname}:3000`;
+    }
+  }
+
+  return "http://localhost:3000";
+}
+
+export const API_BASE = resolveApiBase();
+
+export const TOKEN_KEY = "chat_token";
+export const USER_KEY = "chat_user";
 
 export async function apiFetch(path, options = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
@@ -26,7 +41,7 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (!response.ok) {
-    throw new Error(data?.message || 'Request failed');
+    throw new Error(data?.message || "Request failed");
   }
 
   return data;

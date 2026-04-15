@@ -1,11 +1,11 @@
-import { useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import ChatPage from './pages/ChatPage';
-import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage';
-import PageLoader from './components/PageLoader';
-import { useAuthStore } from './store/useAuthStore';
+import { useEffect } from "react";
+import { Toaster } from "react-hot-toast";
+import { Navigate, Route, Routes } from "react-router-dom";
+import PageLoader from "./components/PageLoader";
+import ChatPage from "./pages/ChatPage";
+import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
+import { useAuthStore } from "./store/useAuthStore";
 
 function App() {
   const { checkAuth, isCheckingAuth, authUser } = useAuthStore();
@@ -18,9 +18,6 @@ function App() {
 
   return (
     <div className="app-shell">
-      <div className="app-decor decor-a" />
-      <div className="app-decor decor-b" />
-
       <Routes>
         <Route
           path="/"

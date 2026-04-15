@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef } from "react";
 
 function useKeyboardSound() {
   const ctxRef = useRef(null);
@@ -16,7 +16,7 @@ function useKeyboardSound() {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'square';
+      osc.type = "square";
       osc.frequency.value = 950 + Math.random() * 140;
       gain.gain.value = 0.015;
 

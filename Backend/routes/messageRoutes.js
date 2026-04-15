@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadImage } from '../lib/cloudinary.js';
+import { uploadImage } from "../lib/cloudinary.js";
 import { protect } from "../middleware/auth.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
@@ -53,7 +53,9 @@ router.get("/:userId", async (req, res) => {
         { senderId: req.user._id, receiverId: userId },
         { senderId: userId, receiverId: req.user._id },
       ],
-    }).sort({ createdAt: 1 });
+    })
+      .sort({ createdAt: 1 })
+      .populate("replyTo", "text image senderId createdAt");
 
     return res.json({ messages });
   } catch {
@@ -64,7 +66,12 @@ router.get("/:userId", async (req, res) => {
 async function sendMessageHandler(req, res) {
   try {
     const { userId } = req.params;
-    const { text = "", image = "" } = req.body;
+    const {
+      text = "",
+      image = "",
+      replyTo = null,
+      replyPreview = "",
+    } = req.body;
 
     if (!text.trim() && !image) {
       return res.status(400).json({ message: "Text or image is required" });
@@ -78,19 +85,26 @@ async function sendMessageHandler(req, res) {
 
     const receiverExists = await User.exists({ _id: userId });
     if (!receiverExists) {
-      return res.status(404).json({ message: 'Receiver not found' });
+      return res.status(404).json({ message: "Receiver not found" });
     }
 
-    const imageUrl = image ? await uploadImage(image) : '';
+    const imageUrl = image ? await uploadImage(image) : "";
 
     const message = await Message.create({
       senderId: req.user._id,
       receiverId: userId,
       text: text.trim(),
       image: imageUrl,
+      replyTo,
+      replyPreview,
     });
 
-    return res.status(201).json({ message });
+    const populatedMessage = await Message.findById(message._id).populate(
+      "replyTo",
+      "text image senderId createdAt",
+    );
+
+    return res.status(201).json({ message: populatedMessage });
   } catch {
     return res.status(500).json({ message: "Failed to send message" });
   }

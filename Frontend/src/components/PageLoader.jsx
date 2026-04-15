@@ -1,4 +1,4 @@
-import { LoaderCircleIcon } from 'lucide-react';
+import { LoaderCircleIcon } from "lucide-react";
 
 function PageLoader() {
   return (

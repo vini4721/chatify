@@ -1,6 +1,6 @@
-import { XIcon } from 'lucide-react';
-import { useAuthStore } from '../store/useAuthStore';
-import { useChatStore } from '../store/useChatStore';
+import { XIcon } from "lucide-react";
+import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
 
 function ChatHeader() {
   const { selectedUser, setSelectedUser, typingUsers } = useChatStore();
@@ -22,12 +22,16 @@ function ChatHeader() {
         </div>
         <div>
           <h4>{selectedUser.name}</h4>
-          <p className={isTyping ? 'typing' : isOnline ? 'online' : 'offline'}>
-            {isTyping ? 'Typing...' : isOnline ? 'Online' : 'Offline'}
+          <p className={isTyping ? "typing" : isOnline ? "online" : "offline"}>
+            {isTyping ? "Typing..." : isOnline ? "Online" : "Offline"}
           </p>
         </div>
       </div>
-      <button type="button" className="icon-btn" onClick={() => setSelectedUser(null)}>
+      <button
+        type="button"
+        className="icon-btn"
+        onClick={() => setSelectedUser(null)}
+      >
         <XIcon size={18} />
       </button>
     </div>

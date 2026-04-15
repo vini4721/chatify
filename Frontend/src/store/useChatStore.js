@@ -1,17 +1,22 @@
-import { create } from 'zustand';
-import toast from 'react-hot-toast';
-import { apiFetch } from '../lib/api';
-import { useAuthStore } from './useAuthStore';
+import toast from "react-hot-toast";
+import { create } from "zustand";
+import { apiFetch } from "../lib/api";
+import { useAuthStore } from "./useAuthStore";
 
 export const useChatStore = create((set, get) => ({
   allContacts: [],
   chats: [],
   messages: [],
-  activeTab: 'chats',
+  activeTab: "chats",
   selectedUser: null,
+  replyToMessage: null,
   isUsersLoading: false,
   isMessagesLoading: false,
-  isSoundEnabled: JSON.parse(localStorage.getItem('is_sound_enabled') || 'false'),
+  isSearchingUser: false,
+  isSoundEnabled: JSON.parse(
+    localStorage.getItem("is_sound_enabled") || "false",
+  ),
+  userSearchResults: [],
   unreadCounts: {},
   typingUsers: {},
   messageListener: null,
@@ -21,22 +26,66 @@ export const useChatStore = create((set, get) => ({
   setActiveTab: (activeTab) => set({ activeTab }),
   setSelectedUser: (selectedUser) => {
     const nextUnread = { ...get().unreadCounts };
+    const nextContacts = [...get().allContacts];
+    const nextChats = [...get().chats];
+
     if (selectedUser?._id) {
       delete nextUnread[selectedUser._id];
+
+      if (!nextContacts.some((user) => user._id === selectedUser._id)) {
+        nextContacts.unshift(selectedUser);
+      }
+
+      if (!nextChats.some((user) => user._id === selectedUser._id)) {
+        nextChats.unshift(selectedUser);
+      }
     }
-    set({ selectedUser, unreadCounts: nextUnread });
+
+    set({
+      selectedUser,
+      unreadCounts: nextUnread,
+      allContacts: nextContacts,
+      chats: nextChats,
+      replyToMessage: null,
+    });
+  },
+
+  setReplyToMessage: (message) => set({ replyToMessage: message }),
+  clearReplyToMessage: () => set({ replyToMessage: null }),
+
+  clearUserSearchResults: () => set({ userSearchResults: [] }),
+
+  searchUsers: async (query) => {
+    const normalized = query.trim();
+    if (!normalized) {
+      set({ userSearchResults: [] });
+      return;
+    }
+
+    set({ isSearchingUser: true });
+    try {
+      const data = await apiFetch(
+        `/api/users/search?query=${encodeURIComponent(normalized)}`,
+      );
+      set({ userSearchResults: data.users || [] });
+    } catch (error) {
+      set({ userSearchResults: [] });
+      toast.error(error.message);
+    } finally {
+      set({ isSearchingUser: false });
+    }
   },
 
   toggleSound: () => {
     const next = !get().isSoundEnabled;
-    localStorage.setItem('is_sound_enabled', JSON.stringify(next));
+    localStorage.setItem("is_sound_enabled", JSON.stringify(next));
     set({ isSoundEnabled: next });
   },
 
   getAllContacts: async () => {
     set({ isUsersLoading: true });
     try {
-      const data = await apiFetch('/api/messages/contacts');
+      const data = await apiFetch("/api/messages/contacts");
       set({ allContacts: data.users || [] });
     } catch (error) {
       toast.error(error.message);
@@ -48,7 +97,7 @@ export const useChatStore = create((set, get) => ({
   getMyChatPartners: async () => {
     set({ isUsersLoading: true });
     try {
-      const data = await apiFetch('/api/messages/chats');
+      const data = await apiFetch("/api/messages/chats");
       set({ chats: data.users || [] });
     } catch (error) {
       toast.error(error.message);
@@ -71,7 +120,7 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async ({ text, image }) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser, messages, replyToMessage } = get();
     const { socket, authUser } = useAuthStore.getState();
 
     if (!selectedUser) return;
@@ -81,18 +130,30 @@ export const useChatStore = create((set, get) => ({
       _id: `tmp-${Date.now()}`,
       senderId: authUser._id,
       receiverId: selectedUser._id,
-      text: text?.trim() || '',
-      image: image || '',
+      text: text?.trim() || "",
+      image: image || "",
       createdAt: new Date().toISOString(),
       optimistic: true,
+      replyTo: replyToMessage,
+      replyPreview: replyToMessage
+        ? replyToMessage.text || replyToMessage.image || "Image"
+        : "",
     };
 
     set({ messages: [...messages, optimisticMessage] });
 
     if (socket?.connected) {
       socket.emit(
-        'private-message',
-        { to: selectedUser._id, text: text?.trim() || '', image: image || '' },
+        "private-message",
+        {
+          to: selectedUser._id,
+          text: text?.trim() || "",
+          image: image || "",
+          replyTo: replyToMessage?._id || null,
+          replyPreview: replyToMessage
+            ? replyToMessage.text || replyToMessage.image || "Image"
+            : "",
+        },
         (result) => {
           if (result?.error) {
             set({ messages });
@@ -101,21 +162,28 @@ export const useChatStore = create((set, get) => ({
           }
 
           set({ messages: [...messages, result.message] });
-          get().getMyChatPartners();
-        }
+          set({ replyToMessage: null });
+        },
       );
       return;
     }
 
     try {
       const data = await apiFetch(`/api/messages/send/${selectedUser._id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text?.trim() || '', image: image || '' }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: text?.trim() || "",
+          image: image || "",
+          replyTo: replyToMessage?._id || null,
+          replyPreview: replyToMessage
+            ? replyToMessage.text || replyToMessage.image || "Image"
+            : "",
+        }),
       });
 
       set({ messages: [...messages, data.message] });
-      get().getMyChatPartners();
+      set({ replyToMessage: null });
     } catch (error) {
       set({ messages });
       toast.error(error.message);
@@ -146,11 +214,9 @@ export const useChatStore = create((set, get) => ({
         });
       }
 
-      get().getMyChatPartners();
-
       if (isSoundEnabled && isFromSelectedUser) {
         const notification = new Audio(
-          'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
+          "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=",
         );
         notification.play().catch(() => {});
       }
@@ -168,9 +234,9 @@ export const useChatStore = create((set, get) => ({
       set({ typingUsers: nextTyping });
     };
 
-    socket.on('new-message', listener);
-    socket.on('typing-start', typingStart);
-    socket.on('typing-stop', typingStop);
+    socket.on("new-message", listener);
+    socket.on("typing-start", typingStart);
+    socket.on("typing-stop", typingStop);
 
     set({
       messageListener: listener,
@@ -184,15 +250,15 @@ export const useChatStore = create((set, get) => ({
     const { messageListener, typingStartListener, typingStopListener } = get();
 
     if (socket && messageListener) {
-      socket.off('new-message', messageListener);
+      socket.off("new-message", messageListener);
     }
 
     if (socket && typingStartListener) {
-      socket.off('typing-start', typingStartListener);
+      socket.off("typing-start", typingStartListener);
     }
 
     if (socket && typingStopListener) {
-      socket.off('typing-stop', typingStopListener);
+      socket.off("typing-stop", typingStopListener);
     }
 
     set({
@@ -206,7 +272,7 @@ export const useChatStore = create((set, get) => ({
     const { socket } = useAuthStore.getState();
     const { selectedUser } = get();
     if (socket?.connected && selectedUser?._id) {
-      socket.emit('typing-start', { to: selectedUser._id });
+      socket.emit("typing-start", { to: selectedUser._id });
     }
   },
 
@@ -214,7 +280,7 @@ export const useChatStore = create((set, get) => ({
     const { socket } = useAuthStore.getState();
     const { selectedUser } = get();
     if (socket?.connected && selectedUser?._id) {
-      socket.emit('typing-stop', { to: selectedUser._id });
+      socket.emit("typing-stop", { to: selectedUser._id });
     }
   },
 }));

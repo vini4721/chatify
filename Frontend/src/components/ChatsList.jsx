@@ -1,11 +1,17 @@
-import { useEffect } from 'react';
-import { useChatStore } from '../store/useChatStore';
-import { useAuthStore } from '../store/useAuthStore';
-import UsersLoadingSkeleton from './UsersLoadingSkeleton';
-import NoChatsFound from './NoChatsFound';
+import { useEffect } from "react";
+import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
+import NoChatsFound from "./NoChatsFound";
+import UsersLoadingSkeleton from "./UsersLoadingSkeleton";
 
 function ChatsList() {
-  const { chats, getMyChatPartners, setSelectedUser, isUsersLoading, unreadCounts } = useChatStore();
+  const {
+    chats,
+    getMyChatPartners,
+    setSelectedUser,
+    isUsersLoading,
+    unreadCounts,
+  } = useChatStore();
   const { onlineUsers } = useAuthStore();
 
   useEffect(() => {
@@ -33,11 +39,19 @@ function ChatsList() {
           </div>
           <div className="list-meta">
             <p>{user.name}</p>
-            <span className={onlineUsers.includes(user._id) ? 'online' : 'offline'}>
-              {onlineUsers.includes(user._id) ? 'Online' : 'Offline'}
+            <p className="username-line">ID: {user.publicId || "N/A"}</p>
+            <p className="username-line">
+              @{user.username || user.email?.split("@")[0] || "user"}
+            </p>
+            <span
+              className={onlineUsers.includes(user._id) ? "online" : "offline"}
+            >
+              {onlineUsers.includes(user._id) ? "Online" : "Offline"}
             </span>
           </div>
-          {!!unreadCounts[user._id] && <span className="unread-pill">{unreadCounts[user._id]}</span>}
+          {!!unreadCounts[user._id] && (
+            <span className="unread-pill">{unreadCounts[user._id]}</span>
+          )}
         </button>
       ))}
     </>

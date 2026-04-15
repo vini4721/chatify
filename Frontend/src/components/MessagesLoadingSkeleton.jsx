@@ -4,7 +4,7 @@ function MessagesLoadingSkeleton() {
       {[1, 2, 3, 4].map((item) => (
         <div
           key={item}
-          className={`skeleton-bubble ${item % 2 === 0 ? 'left' : 'right'}`}
+          className={`skeleton-bubble ${item % 2 === 0 ? "left" : "right"}`}
         />
       ))}
     </div>

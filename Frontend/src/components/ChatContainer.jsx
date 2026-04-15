@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { useAuthStore } from '../store/useAuthStore';
-import { useChatStore } from '../store/useChatStore';
-import ChatHeader from './ChatHeader';
-import MessageInput from './MessageInput';
-import MessagesLoadingSkeleton from './MessagesLoadingSkeleton';
-import NoChatHistoryPlaceholder from './NoChatHistoryPlaceholder';
+import { useEffect, useRef } from "react";
+import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
+import ChatHeader from "./ChatHeader";
+import MessageInput from "./MessageInput";
+import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
+import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 
 function ChatContainer() {
   const { authUser } = useAuthStore();
@@ -15,6 +15,7 @@ function ChatContainer() {
     isMessagesLoading,
     subscribeToMessages,
     unsubscribeFromMessages,
+    setReplyToMessage,
   } = useChatStore();
 
   const endRef = useRef(null);
@@ -26,10 +27,15 @@ function ChatContainer() {
     subscribeToMessages();
 
     return () => unsubscribeFromMessages();
-  }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]);
+  }, [
+    selectedUser,
+    getMessagesByUserId,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  ]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   if (!selectedUser) return null;
@@ -46,17 +52,45 @@ function ChatContainer() {
             {messages.map((msg) => {
               const own = msg.senderId === authUser._id;
               return (
-                <article key={msg._id} className={`bubble-wrap ${own ? 'mine' : 'theirs'}`}>
+                <article
+                  key={msg._id}
+                  className={`bubble-wrap ${own ? "mine" : "theirs"}`}
+                >
+                  {msg.replyTo && (
+                    <button
+                      type="button"
+                      className="reply-chip"
+                      onClick={() => setReplyToMessage(msg.replyTo)}
+                    >
+                      <span className="reply-chip-label">In reply to</span>
+                      <span className="reply-chip-text">
+                        {msg.replyTo.text || "Image"}
+                      </span>
+                    </button>
+                  )}
                   <div className="bubble">
-                    {msg.image && <img src={msg.image} alt="Shared" className="message-image" />}
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="Shared"
+                        className="message-image"
+                      />
+                    )}
                     {msg.text && <p className="message-text">{msg.text}</p>}
                     <span className="timestamp">
                       {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    className="reply-action"
+                    onClick={() => setReplyToMessage(msg)}
+                  >
+                    Reply
+                  </button>
                 </article>
               );
             })}

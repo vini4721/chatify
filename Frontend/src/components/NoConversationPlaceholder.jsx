@@ -1,4 +1,4 @@
-import { MessageCircleIcon } from 'lucide-react';
+import { MessageCircleIcon } from "lucide-react";
 
 function NoConversationPlaceholder() {
   return (

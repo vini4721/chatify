@@ -1,5 +1,5 @@
-import { MessageCircleIcon } from 'lucide-react';
-import { useChatStore } from '../store/useChatStore';
+import { MessageCircleIcon } from "lucide-react";
+import { useChatStore } from "../store/useChatStore";
 
 function NoChatsFound() {
   const { setActiveTab } = useChatStore();
@@ -8,7 +8,11 @@ function NoChatsFound() {
     <div className="placeholder compact">
       <MessageCircleIcon />
       <p>No conversations yet</p>
-      <button type="button" className="mini-btn" onClick={() => setActiveTab('contacts')}>
+      <button
+        type="button"
+        className="mini-btn"
+        onClick={() => setActiveTab("contacts")}
+      >
         Find Contacts
       </button>
     </div>

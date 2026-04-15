@@ -1,10 +1,10 @@
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary } from "cloudinary";
 
 export function hasCloudinaryConfig() {
   return Boolean(
     process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET,
   );
 }
 
@@ -17,15 +17,17 @@ if (hasCloudinaryConfig()) {
 }
 
 export async function uploadImage(image) {
-  if (!image) return '';
+  if (!image) return "";
 
   // Already-hosted URL can be reused as-is.
-  if (typeof image === 'string' && image.startsWith('http')) {
+  if (typeof image === "string" && image.startsWith("http")) {
     return image;
   }
 
   if (!hasCloudinaryConfig()) {
-    throw new Error('Cloudinary is not configured. Add env keys to enable image uploads.');
+    throw new Error(
+      "Cloudinary is not configured. Add env keys to enable image uploads.",
+    );
   }
 
   const result = await cloudinary.uploader.upload(image);
