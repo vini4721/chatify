@@ -98,7 +98,8 @@ function ChatContainer() {
 
             {messages.map((msg) => {
               const msgId = normalizeId(msg._id);
-              const own = normalizeId(msg.senderId) === normalizeId(authUser?._id);
+              const own =
+                normalizeId(msg.senderId) === normalizeId(authUser?._id);
               const isSelected = selectedMessageIds.includes(msgId);
               return (
                 <article

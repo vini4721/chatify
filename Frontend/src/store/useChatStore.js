@@ -169,7 +169,9 @@ export const useChatStore = create((set, get) => ({
       const deletedSet = new Set(deletedIds);
 
       set({
-        messages: messages.filter((msg) => !deletedSet.has(normalizeId(msg._id))),
+        messages: messages.filter(
+          (msg) => !deletedSet.has(normalizeId(msg._id)),
+        ),
         selectedMessageIds: [],
         isSelectingMessages: false,
         replyToMessage:
