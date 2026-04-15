@@ -1,4 +1,3 @@
-import { CheckSquareIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
@@ -24,12 +23,6 @@ function ChatContainer() {
     subscribeToMessages,
     unsubscribeFromMessages,
     setReplyToMessage,
-    isSelectingMessages,
-    selectedMessageIds,
-    startSelectingMessages,
-    stopSelectingMessages,
-    toggleMessageSelection,
-    deleteSelectedMessages,
   } = useChatStore();
 
   const endRef = useRef(null);
@@ -63,59 +56,14 @@ function ChatContainer() {
           <MessagesLoadingSkeleton />
         ) : messages.length ? (
           <div className="message-list">
-            <div className="message-select-toolbar">
-              {isSelectingMessages ? (
-                <>
-                  <p>{selectedMessageIds.length} selected</p>
-                  <div className="message-select-actions">
-                    <button
-                      type="button"
-                      className="mini-btn danger"
-                      disabled={!selectedMessageIds.length}
-                      onClick={deleteSelectedMessages}
-                    >
-                      <Trash2Icon size={14} /> Delete
-                    </button>
-                    <button
-                      type="button"
-                      className="mini-btn"
-                      onClick={stopSelectingMessages}
-                    >
-                      <XIcon size={14} /> Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  className="mini-btn"
-                  onClick={startSelectingMessages}
-                >
-                  <CheckSquareIcon size={14} /> Select messages
-                </button>
-              )}
-            </div>
-
             {messages.map((msg) => {
-              const msgId = normalizeId(msg._id);
               const own =
                 normalizeId(msg.senderId) === normalizeId(authUser?._id);
-              const isSelected = selectedMessageIds.includes(msgId);
               return (
                 <article
                   key={msg._id}
-                  className={`bubble-wrap ${own ? "mine" : "theirs"} ${isSelected ? "selected" : ""}`}
+                  className={`bubble-wrap ${own ? "mine" : "theirs"}`}
                 >
-                  {isSelectingMessages && own && !msg.optimistic && (
-                    <button
-                      type="button"
-                      className={`message-select-btn ${isSelected ? "active" : ""}`}
-                      onClick={() => toggleMessageSelection(msgId)}
-                    >
-                      {isSelected ? "Selected" : "Select"}
-                    </button>
-                  )}
-
                   {msg.replyTo && (
                     <button
                       type="button"
@@ -144,15 +92,13 @@ function ChatContainer() {
                       })}
                     </span>
                   </div>
-                  {!isSelectingMessages && (
-                    <button
-                      type="button"
-                      className="reply-action"
-                      onClick={() => setReplyToMessage(msg)}
-                    >
-                      Reply
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="reply-action"
+                    onClick={() => setReplyToMessage(msg)}
+                  >
+                    Reply
+                  </button>
                 </article>
               );
             })}

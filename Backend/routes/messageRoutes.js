@@ -110,44 +110,6 @@ async function sendMessageHandler(req, res) {
   }
 }
 
-router.delete("/bulk", async (req, res) => {
-  try {
-    const { messageIds = [] } = req.body || {};
-
-    if (!Array.isArray(messageIds) || messageIds.length === 0) {
-      return res.status(400).json({ message: "messageIds is required" });
-    }
-
-    const ids = messageIds
-      .filter((id) => typeof id === "string" && id.trim())
-      .slice(0, 100);
-
-    if (!ids.length) {
-      return res.status(400).json({ message: "No valid message IDs provided" });
-    }
-
-    const deletableMessages = await Message.find({
-      _id: { $in: ids },
-      senderId: req.user._id,
-    }).select("_id");
-
-    const deletableIds = deletableMessages.map((msg) => msg._id.toString());
-
-    if (!deletableIds.length) {
-      return res.status(403).json({ message: "No deletable messages found" });
-    }
-
-    await Message.deleteMany({ _id: { $in: deletableIds } });
-
-    return res.json({
-      deletedIds: deletableIds,
-      deletedCount: deletableIds.length,
-    });
-  } catch {
-    return res.status(500).json({ message: "Failed to delete messages" });
-  }
-});
-
 router.post("/:userId", sendMessageHandler);
 router.post("/send/:userId", sendMessageHandler);
 

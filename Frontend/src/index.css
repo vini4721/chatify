@@ -669,62 +669,8 @@ button {
   gap: 0.7rem;
 }
 
-.message-select-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.7rem;
-  padding: 0.5rem 0.55rem;
-  border: 1px solid rgba(137, 158, 172, 0.24);
-  border-radius: 12px;
-  background: rgba(20, 31, 40, 0.92);
-  backdrop-filter: blur(8px);
-}
-
-.message-select-toolbar p {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-}
-
-.message-select-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.mini-btn.danger {
-  border-color: rgba(220, 97, 97, 0.38);
-  color: #f5c4c4;
-  background: rgba(93, 37, 37, 0.42);
-}
-
 .bubble-wrap {
   max-width: 72%;
-}
-
-.bubble-wrap.selected .bubble {
-  box-shadow:
-    0 0 0 2px rgba(106, 154, 142, 0.5),
-    0 10px 24px rgba(0, 0, 0, 0.12);
-}
-
-.message-select-btn {
-  margin-bottom: 0.28rem;
-  border: 1px solid rgba(137, 158, 172, 0.28);
-  border-radius: 999px;
-  background: rgba(31, 46, 58, 0.9);
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  padding: 0.2rem 0.55rem;
-}
-
-.message-select-btn.active {
-  border-color: rgba(106, 154, 142, 0.72);
-  color: #dcefeb;
-  background: rgba(79, 138, 131, 0.3);
 }
 
 .bubble-wrap.mine {
