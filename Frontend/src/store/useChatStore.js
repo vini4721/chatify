@@ -10,6 +10,8 @@ export const useChatStore = create((set, get) => ({
   activeTab: "chats",
   selectedUser: null,
   replyToMessage: null,
+  isSelectingMessages: false,
+  selectedMessageIds: [],
   isUsersLoading: false,
   isMessagesLoading: false,
   isSearchingUser: false,
@@ -47,11 +49,28 @@ export const useChatStore = create((set, get) => ({
       allContacts: nextContacts,
       chats: nextChats,
       replyToMessage: null,
+      isSelectingMessages: false,
+      selectedMessageIds: [],
     });
   },
 
   setReplyToMessage: (message) => set({ replyToMessage: message }),
   clearReplyToMessage: () => set({ replyToMessage: null }),
+
+  startSelectingMessages: () =>
+    set({ isSelectingMessages: true, selectedMessageIds: [] }),
+
+  stopSelectingMessages: () =>
+    set({ isSelectingMessages: false, selectedMessageIds: [] }),
+
+  toggleMessageSelection: (messageId) => {
+    const selected = get().selectedMessageIds;
+    if (selected.includes(messageId)) {
+      set({ selectedMessageIds: selected.filter((id) => id !== messageId) });
+      return;
+    }
+    set({ selectedMessageIds: [...selected, messageId] });
+  },
 
   clearUserSearchResults: () => set({ userSearchResults: [] }),
 
@@ -110,12 +129,46 @@ export const useChatStore = create((set, get) => ({
     set({ isMessagesLoading: true });
     try {
       const data = await apiFetch(`/api/messages/${userId}`);
-      set({ messages: data.messages || [] });
+      set({
+        messages: data.messages || [],
+        isSelectingMessages: false,
+        selectedMessageIds: [],
+      });
     } catch (error) {
-      set({ messages: [] });
+      set({ messages: [], isSelectingMessages: false, selectedMessageIds: [] });
       toast.error(error.message);
     } finally {
       set({ isMessagesLoading: false });
+    }
+  },
+
+  deleteSelectedMessages: async () => {
+    const { selectedMessageIds, messages, replyToMessage } = get();
+    if (!selectedMessageIds.length) return;
+
+    try {
+      const data = await apiFetch("/api/messages/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageIds: selectedMessageIds }),
+      });
+
+      const deletedIds = data.deletedIds || [];
+      const deletedSet = new Set(deletedIds);
+
+      set({
+        messages: messages.filter((msg) => !deletedSet.has(msg._id)),
+        selectedMessageIds: [],
+        isSelectingMessages: false,
+        replyToMessage:
+          replyToMessage && deletedSet.has(replyToMessage._id)
+            ? null
+            : replyToMessage,
+      });
+
+      toast.success(`${data.deletedCount || deletedIds.length} message(s) deleted`);
+    } catch (error) {
+      toast.error(error.message);
     }
   },
 
