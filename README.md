@@ -1,6 +1,43 @@
 # Chatify
 
-A full-stack real-time chat app inspired by Chatify. This repo contains a Node.js/Express backend with Socket.IO and a React/Vite frontend.
+A full-stack real-time chat app with a Node.js/Express backend, Socket.IO, and a React/Vite frontend.
+
+[![CI](https://github.com/vini4721/chatify/actions/workflows/ci.yml/badge.svg)](https://github.com/vini4721/chatify/actions/workflows/ci.yml)
+[![CD](https://github.com/vini4721/chatify/actions/workflows/cd.yml/badge.svg)](https://github.com/vini4721/chatify/actions/workflows/cd.yml)
+[![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?logo=docker&logoColor=white)](./Dockerfile)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-Kustomize-326CE5?logo=kubernetes&logoColor=white)](./k8s/)
+[![Terraform](https://img.shields.io/badge/Terraform-IaC-844FBA?logo=terraform&logoColor=white)](./terraform/)
+
+## DevOps & CI/CD
+
+This project is containerized and automated end-to-end:
+
+| Layer | Tooling |
+|-------|---------|
+| **Container** | Multi-stage `Dockerfile`, Docker Compose (dev + prod) |
+| **Orchestration** | Kubernetes manifests (`k8s/`, Kustomize) |
+| **Infrastructure as code** | Terraform (`terraform/`) |
+| **CI** | GitHub Actions — lint, build, smoke tests, manifest validation |
+| **CD** | GitHub Actions — build & push image to [GHCR](https://github.com/vini4721/chatify/pkgs/container/chatify) |
+
+On every push to `main`, the CD pipeline builds the Docker image and publishes it to GitHub Container Registry. Kubernetes deploy is optional (`workflow_dispatch`).
+
+<p align="center">
+  <a href="https://github.com/vini4721/chatify/actions/workflows/cd.yml">
+    <img src="docs/assets/github-actions-cd.png" alt="GitHub Actions CD pipeline — Docker build and push to GHCR" width="780" />
+  </a>
+  <br />
+  <em>CD workflow: automated Docker build & push (Kubernetes deploy optional)</em>
+</p>
+
+```bash
+make dev          # Docker Compose — local dev stack
+make build        # Production image
+make k8s-apply    # Deploy to Kubernetes (local overlay)
+make ci           # Run CI checks locally
+```
+
+More detail: **[docs/DEVOPS.md](docs/DEVOPS.md)**
 
 ## Features
 
@@ -100,11 +137,7 @@ npm start
 
 In production, the backend serves the built frontend from `Frontend/dist`.
 
-## DevOps
-
-Resume-friendly minimal stack: **Docker · Docker Compose · Kubernetes (Kustomize) · Terraform · GitHub Actions CI/CD**.
-
-See **[docs/DEVOPS.md](docs/DEVOPS.md)** for a one-page overview and interview talking points.
+## DevOps reference
 
 ### Docker & Compose
 
@@ -117,12 +150,10 @@ make build        # docker build -t chatify:latest .
 ### Kubernetes
 
 ```bash
-make build
-make k8s-apply    # minikube / kind / Docker Desktop K8s
-# NodePort: http://localhost:30080  (or port-forward — see docs/DEVOPS.md)
+make build && make k8s-apply    # minikube / kind / Docker Desktop K8s
 ```
 
-Manifests: `k8s/base` + `k8s/overlays/local`.
+Manifests: `k8s/base` + `k8s/overlays/local` (NodePort `30080`).
 
 ### Terraform
 
@@ -131,29 +162,14 @@ cp terraform/terraform.tfvars.example terraform/terraform.tfvars
 make tf-init && make tf-apply
 ```
 
-Provisions the same app on any cluster reachable via `~/.kube/config`.
-
-### CI/CD
+### Workflows
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `ci.yml` | PR / push | Lint, build, smoke test, Docker build, Kustomize + kubeconform, `terraform validate` |
-| `cd.yml` | push `main` | Push image to **GHCR**; optional K8s deploy via `workflow_dispatch` |
+| [`ci.yml`](.github/workflows/ci.yml) | PR / push | Lint, build, smoke test, Docker build, Kustomize + kubeconform, `terraform validate` |
+| [`cd.yml`](.github/workflows/cd.yml) | push `main` | Push image to **GHCR**; optional K8s deploy via `workflow_dispatch` |
 
-Local checks: `make ci`
-
-### Health checks
-
-`GET /api/health` — API + MongoDB readiness (used by Docker, Kubernetes probes).
-
-### Environment files
-
-| File | Purpose |
-|------|---------|
-| `Backend/.env.example` | Local/manual backend run |
-| `Frontend/.env.example` | Vite dev (`VITE_API_URL`) |
-| `.env.example` | Docker production compose |
-| `terraform/terraform.tfvars.example` | Terraform variables |
+Health endpoint: `GET /api/health` (Docker & Kubernetes probes).
 
 ## Notes
 
