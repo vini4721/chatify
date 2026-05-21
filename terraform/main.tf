@@ -25,9 +25,9 @@ resource "kubernetes_config_map_v1" "app" {
   }
 
   data = {
-    NODE_ENV  = "production"
-    PORT      = "3000"
-    MONGO_URI = "mongodb://mongo:27017/chat_app"
+    NODE_ENV   = "production"
+    PORT       = "3000"
+    MONGO_URI  = "mongodb://mongo:27017/chat_app"
     CLIENT_URL = var.client_url
   }
 }
