@@ -5,8 +5,10 @@ function resolveApiBase() {
 
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `${window.location.protocol}//${hostname}:3000`;
+    const isLocalDev =
+      hostname === "localhost" || hostname === "127.0.0.1";
+    if (hostname && !isLocalDev) {
+      return window.location.origin;
     }
   }
 

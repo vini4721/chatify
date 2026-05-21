@@ -100,6 +100,61 @@ npm start
 
 In production, the backend serves the built frontend from `Frontend/dist`.
 
+## DevOps
+
+Resume-friendly minimal stack: **Docker · Docker Compose · Kubernetes (Kustomize) · Terraform · GitHub Actions CI/CD**.
+
+See **[docs/DEVOPS.md](docs/DEVOPS.md)** for a one-page overview and interview talking points.
+
+### Docker & Compose
+
+```bash
+make dev          # MongoDB + API + Vite (ports 5173 / 3000)
+make prod         # Single production image + MongoDB (port 3000)
+make build        # docker build -t chatify:latest .
+```
+
+### Kubernetes
+
+```bash
+make build
+make k8s-apply    # minikube / kind / Docker Desktop K8s
+# NodePort: http://localhost:30080  (or port-forward — see docs/DEVOPS.md)
+```
+
+Manifests: `k8s/base` + `k8s/overlays/local`.
+
+### Terraform
+
+```bash
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars
+make tf-init && make tf-apply
+```
+
+Provisions the same app on any cluster reachable via `~/.kube/config`.
+
+### CI/CD
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci.yml` | PR / push | Lint, build, smoke test, Docker build, Kustomize + kubeconform, `terraform validate` |
+| `cd.yml` | push `main` | Push image to **GHCR**; optional K8s deploy via `workflow_dispatch` |
+
+Local checks: `make ci`
+
+### Health checks
+
+`GET /api/health` — API + MongoDB readiness (used by Docker, Kubernetes probes).
+
+### Environment files
+
+| File | Purpose |
+|------|---------|
+| `Backend/.env.example` | Local/manual backend run |
+| `Frontend/.env.example` | Vite dev (`VITE_API_URL`) |
+| `.env.example` | Docker production compose |
+| `terraform/terraform.tfvars.example` | Terraform variables |
+
 ## Notes
 
 - If Cloudinary keys are not configured, image upload features will not persist to Cloudinary.

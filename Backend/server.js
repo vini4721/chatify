@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import path from "path";
 import { Server } from "socket.io";
 
-import { connectDB } from "./config/db.js";
+import { connectDB, disconnectDB, getDbStatus } from "./config/db.js";
 import { apiRateLimit, authRateLimit } from "./middleware/rateLimit.js";
 import Message from "./models/Message.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -53,7 +53,14 @@ app.use(express.json({ limit: "6mb" }));
 app.use("/api", apiRateLimit);
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true });
+  const db = getDbStatus();
+  const ok = db.ready;
+  res.status(ok ? 200 : 503).json({
+    ok,
+    service: "chatify-api",
+    db,
+    uptimeSeconds: Math.floor(process.uptime()),
+  });
 });
 
 app.use("/api/auth", authRateLimit, authRoutes);
@@ -169,6 +176,32 @@ io.on("connection", (socket) => {
     broadcastOnlineUsers();
   });
 });
+
+let isShuttingDown = false;
+
+async function shutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`Received ${signal}, shutting down...`);
+
+  server.close(async () => {
+    try {
+      await disconnectDB();
+    } catch (error) {
+      console.error("Shutdown error:", error.message);
+    } finally {
+      process.exit(0);
+    }
+  });
+
+  setTimeout(() => {
+    console.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 10_000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 try {
   await connectDB(process.env.MONGO_URI);

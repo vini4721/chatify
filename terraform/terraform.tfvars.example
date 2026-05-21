@@ -1,0 +1,3 @@
+jwt_secret = "replace_with_a_long_random_secret"
+client_url   = "http://localhost:3000"
+app_image    = "chatify:latest"
